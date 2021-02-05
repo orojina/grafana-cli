@@ -1,4 +1,11 @@
 CHANGELOG
+## [1.3.0](https://github.com/orojina/grafana-cli/compare/v1.2.0...v1.3.0) (2021-02-05)
+
+
+### Styles
+
+* improve code readability ([a5e984a](https://github.com/orojina/grafana-cli/commit/a5e984ab3c5b91312b406292a45fc8e9c31bc95e))
+
 ## [1.2.0](https://github.com/orojina/grafana-cli/compare/v1.1.0...v1.2.0) (2021-02-05)
 
 

@@ -62,10 +62,6 @@ getStatusCode () {
 
 getAlerts () {
     statusCode=$(getStatusCode)
-    awkCommand="'BEGIN{"
-    awkCommand="$awkCommand printf \"%-12s%-15s%-60s%-60s%s\",\"ALERT_ID\",\"ALERT_STATE\",\"DASHBOARD\",\"ALERT_NAME\",ORS;"
-    awkCommand="$awkCommand for(c=0;c<155;c++) printf \"=\"; printf "\n"}"
-    awkCommand="$awkCommand {printf "%-12d%s%-15s%s%-60s%-60.60s%s",$1,($2 ~ /ok/)?green:($2 ~ /paused/?yellow:($2 ~ /alerting/?red:blue)),$2,reset,$3,$4,ORS; } '"
 
     if [ $statusCode -eq 200 ]; then
         curl -ksH "$GF_AUTH_HEADER" $GF_API_URL/alerts/ | \
@@ -76,7 +72,15 @@ getAlerts () {
         -v yellow="$(tput setaf 3)" \
         -v blue="$(tput setaf 4)" \
         -v reset='\033[0m' \
-        "$awkCommand" | sed 's/"//g' 2>&1
+        'BEGIN{
+            printf "%-12s%-15s%-60s%-60s%s","ALERT_ID","ALERT_STATE","DASHBOARD","ALERT_NAME",ORS;
+            for(c=0;c<155;c++) 
+                printf "="; 
+                printf "\n"
+            }
+            {
+            printf "%-12d%s%-15s%s%-60s%-60.60s%s",$1,($2 ~ /ok/)?green:($2 ~ /paused/?yellow:($2 ~ /alerting/?red:blue)),$2,reset,$3,$4,ORS; 
+            } ' | sed 's/"//g' 2>&1
     else
         echo "ERROR: Grafana returned status code: $statusCode"
         exit 1
