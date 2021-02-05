@@ -1,0 +1,14 @@
+[ENVIRONMENT]
+export GF_ENV="dev"
+export GF_API_URL='URL_to_your_grafana_qa_instance/api'
+export GF_AUTH_HEADER="Authorization: Bearer $GF_TOKEN"
+
+[ORGANIZATION_A]
+export GF_TOKEN="paste_here_ORGANIZATION_A_grafana_api_token"
+export GF_EXCLUDE_ALERTS="type_the_alert_IDs_to_exclude_separated_by_comma_OR_comment_this_line_with_#"
+
+[ORGANIZATION_B]
+export GF_TOKEN="paste_here_ORGANIZATION_B_grafana_api_token"
+
+[ORGANIZATION_N]
+export GF_TOKEN="paste_here_ORGANIZATION_Z_grafana_api_token"
