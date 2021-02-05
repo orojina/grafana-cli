@@ -1,4 +1,11 @@
 CHANGELOG
+## [1.4.0](https://github.com/orojina/grafana-cli/compare/v1.3.0...v1.4.0) (2021-02-05)
+
+
+### Misc
+
+* **release:** 1.3.0 ([06f340e](https://github.com/orojina/grafana-cli/commit/06f340eaefa49565ef356d21384b7cd88ba4e73f))
+
 ## [1.3.0](https://github.com/orojina/grafana-cli/compare/v1.2.0...v1.3.0) (2021-02-05)
 
 
