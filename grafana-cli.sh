@@ -15,11 +15,44 @@ usage () {
                 |           COMMAND                                           |                   DESCRIPTION                          |
                 |-------------------------------------------------------------|--------------------------------------------------------|
                 |  $0 -h                                        | Prints this message                                    |
+                |  $0 config                                    | Prints the current configuration settings              |
+                |  source $0 config set-env qa <organization>   | Set the current environment to qa (env: dev|qa|prod)   |
                 |  $0 alerts                                    | Prints the list of alerts in the current environment   |
                 |----------------------------------------------------------------------------------------------------------------------|
 
                 NOTE: This script requires jq to be installed (https://stedolan.github.io/jq/download/)
                 "
+}
+
+printConfig () {
+    echo "$(env | grep GF_)"
+}
+
+# $1=environment $2=organization
+setEnv () {  
+    unset GF_ENV
+    unset GF_API_URL
+    unset GF_TOKEN
+    unset GF_AUTH_HEADER
+    unset GF_EXCLUDE_ALERTS
+    unset GF_CURR_ORG    
+
+    local environment=$1
+
+    case "$environment" in
+        dev | qa | prod)
+            local org=$2           
+            export GF_CURR_ORG=$org
+            source <(grep = <(grep -A2 "\[$GF_CURR_ORG\]" ~/.grafana/$environment))
+            source <(grep = <(grep -A3 "\[ENVIRONMENT\]" ~/.grafana/$environment))
+            printConfig        
+            ;;
+        *)
+            echo "Invalid environment.
+            Valid environments are: dev,qa,prod"
+            ;;
+    esac
+    
 }
 
 getStatusCode () {
@@ -62,9 +95,40 @@ shift $((OPTIND -1))
 if [ -z "$1" ]; then
     echo "Expected command or resource not provided"
     exit 1
+elif [ "$1" = "config" ]; then
+    shift
+    command=$1
+    if [ -z $command ]; then
+        printConfig
+    else
+        case "$command" in
+            set-env)
+                shift
+                if [ -z $1 ]; then
+                    echo "Environment parameter was not provided but it was expected"
+                    usage
+                else                
+                    env=$1
+                    shift
+                    if [ -z "$1" ]; then
+                        echo "Error: Organization value was expected but it was not provided"
+                        usage
+                    else
+                        org=$1
+                        echo "Switching environment: $env selected ..."
+                        setEnv $env $org
+                    fi                    
+                fi
+                ;;
+            * )
+                echo "Invalid command: $command "
+                exit 1
+                ;;
+        esac
+    fi
 else
     if [ -z "$GF_API_URL" ] || [ -z "$GF_AUTH_HEADER" ]; then
-        echo "ERROR: Environment variables not found."
+        echo "ERROR: Environment variables not found. Use the ""config"" command."
         usage
         exit 1
     fi
