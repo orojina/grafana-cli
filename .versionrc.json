@@ -3,12 +3,12 @@
     "types": [
         {"type": "feat", "section": "Features"},
         {"type": "fix", "section": "Bug Fixes"},
-        {"type": "chore", "hidden": true},
-        {"type": "docs", "hidden": true},
-        {"type": "style", "hidden": true},
-        {"type": "refactor", "hidden": true},
-        {"type": "perf", "hidden": true},
-        {"type": "test", "hidden": true}
+        {"type": "chore","section": "Misc"},
+        {"type": "docs", "section": "Documentation"},
+        {"type": "style", "section": "Styles"},
+        {"type": "refactor", "section": "Refactors"},
+        {"type": "perf", "section": "Performance Improvements"},
+        {"type": "test", "section": "Tests"}
       ],
       "commitUrlFormat": "https://github.com/orojina/grafana-cli/commit/{{hash}}",
       "compareUrlFormat": "https://github.com/orojina/grafana-cli/compare/{{previousTag}}...{{currentTag}}"
