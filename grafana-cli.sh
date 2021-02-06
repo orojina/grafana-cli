@@ -4,6 +4,7 @@
 # Description:  This script can execute actions using the Grafana
 #               API such as:
 #                 - List alerts
+#                 - Pause/Resume alerts
 # ------------------------------------------------------------------
 
 usage () {
@@ -18,6 +19,8 @@ usage () {
                 |  $0 config                                    | Prints the current configuration settings              |
                 |  source $0 config set-env qa <organization>   | Set the current environment to qa (env: dev|qa|prod)   |
                 |  $0 alerts                                    | Prints the list of alerts in the current environment   |
+                |  $0 alerts pause                              | Pauses all the alerts in the current environment       |
+                |  $0 alerts resume                             | Resume all the alerts in the current environment       |
                 |----------------------------------------------------------------------------------------------------------------------|
 
                 NOTE: This script requires jq to be installed (https://stedolan.github.io/jq/download/)
@@ -87,6 +90,36 @@ getAlerts () {
     fi
 }
 
+# $1=alertID
+pauseAlert () {
+    alert=$1
+
+    curl -X POST -ksH "$GF_AUTH_HEADER" \
+    -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -d '{"paused":true}' \
+    "$GF_API_URL/alerts/$alert/pause" 2>&1 && printf "\n"; 
+}
+
+# $1=alertID
+resumeAlert () {
+    alert=$1
+
+    curl -X POST -ksH "$GF_AUTH_HEADER" \
+    -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -d '{"paused":false}' \
+    "$GF_API_URL/alerts/$alert/pause" 2>&1 && printf "\n"; 
+}
+
+pauseAlerts () {
+    curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read line; do pauseAlert $line; done 2>&1; printf "\n"
+}
+
+resumeAlerts () {
+    curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read line; do resumeAlert $line;  done 2>&1; printf "\n"
+}
+
 # --- Options processing -------------------------------------------
 if [ $# -eq 0 ] ; then
     usage
@@ -150,8 +183,29 @@ else
     resource=$1; shift
     case "$resource" in
         alerts)
-            getAlerts
-            exit 0     
+            action=$1; shift
+            if [ -z $action ]; then
+                getAlerts
+                exit 0
+            fi
+
+            case "$action" in
+                pause)
+                    pauseAlerts
+                    exit 0
+                    ;;
+                resume)
+                    resumeAlerts
+                    exit 0
+                    ;;
+                * )
+                    echo "Invalid action: $action
+                        Valid actions are:
+                            - pause
+                            - resume" 1>&2
+                    exit 1
+                    ;;
+            esac       
             ;;
         * )
             echo "Invalid resource: $resource.
