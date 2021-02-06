@@ -20,7 +20,9 @@ usage () {
                 |  source $0 config set-env qa <organization>   | Set the current environment to qa (env: dev|qa|prod)   |
                 |  $0 alerts                                    | Prints the list of alerts in the current environment   |
                 |  $0 alerts pause                              | Pauses all the alerts in the current environment       |
+                |  $0 alerts pause 13,96,55                     | Pauses alerts by their ID in the current environment   |
                 |  $0 alerts resume                             | Resume all the alerts in the current environment       |
+                |  $0 alerts resume 13,96,55                    | Resume alerts by their ID in the current environment   |
                 |----------------------------------------------------------------------------------------------------------------------|
 
                 NOTE: This script requires jq to be installed (https://stedolan.github.io/jq/download/)
@@ -112,12 +114,22 @@ resumeAlert () {
     "$GF_API_URL/alerts/$alert/pause" 2>&1 && printf "\n"; 
 }
 
+# $1=alertIDs separated by comma
 pauseAlerts () {
-    curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read line; do pauseAlert $line; done 2>&1; printf "\n"
+    if [ -z $1 ]; then
+        curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read line; do pauseAlert $line; done 2>&1; printf "\n"
+    else
+        echo "$1" | sed -e $'s/,/\\\n/g' | while read line; do pauseAlert $line;done 2>&1; printf "\n"
+    fi
 }
 
+# $1=alertIDs separated by comma
 resumeAlerts () {
-    curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read line; do resumeAlert $line;  done 2>&1; printf "\n"
+    if [ -z $1 ]; then
+        curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read line; do resumeAlert $line;  done 2>&1; printf "\n"
+    else
+        echo "$1" | sed -e $'s/,/\\\n/g' | while read line; do resumeAlert $line; done 2>&1; printf "\n"
+    fi
 }
 
 # --- Options processing -------------------------------------------
@@ -191,12 +203,34 @@ else
 
             case "$action" in
                 pause)
-                    pauseAlerts
-                    exit 0
+                    alertIds=$1; shift
+                    if [ -z $alertIds ]; then
+                        pauseAlerts
+                        exit 0
+                    fi
+                    
+                    if [[ ! $alertIds =~ (^[0-9]+)((\,[0-9]+)+$|$) ]]; then
+                        echo "Invalid argument: Alert IDs. Expected ids in comma separated format "
+                        exit 1
+                    fi
+
+                    pauseAlerts $alertIds
+
                     ;;
                 resume)
-                    resumeAlerts
-                    exit 0
+                    alertIds=$1
+                    if [ -z $1 ]; then
+                        resumeAlerts
+                        exit 0
+                    fi
+
+                    if [[ ! $alertIds =~ (^[0-9]+)((\,[0-9]+)+$|$) ]]; then
+                        echo "Invalid argument: Alert IDs. Expected ids in comma separated format "
+                        exit 1
+                    fi
+
+                    resumeAlerts $alertIds
+
                     ;;
                 * )
                     echo "Invalid action: $action
