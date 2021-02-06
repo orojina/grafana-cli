@@ -1,4 +1,11 @@
 CHANGELOG
+## [1.6.0](https://github.com/orojina/grafana-cli/compare/v1.5.0...v1.6.0) (2021-02-06)
+
+
+### Features
+
+* accept a comma separated list of alerts in the alerts pause & resume sub-commands ([9bb3b31](https://github.com/orojina/grafana-cli/commit/9bb3b317f65b0030d7777b21570832e49eb603c9))
+
 ## [1.5.0](https://github.com/orojina/grafana-cli/compare/v1.4.0...v1.5.0) (2021-02-06)
 
 
