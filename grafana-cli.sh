@@ -30,7 +30,7 @@ usage () {
 }
 
 printConfig () {
-    echo "$(env | grep GF_)"
+    env | grep GF_
 }
 
 # $1=environment $2=organization
@@ -48,8 +48,8 @@ setEnv () {
         dev | qa | prod)
             local org=$2           
             export GF_CURR_ORG=$org
-            source <(grep = <(grep -A2 "\[$GF_CURR_ORG\]" ~/.grafana/$environment))
-            source <(grep = <(grep -A3 "\[ENVIRONMENT\]" ~/.grafana/$environment))
+            source <(grep '=' <(grep -A2 "\[$GF_CURR_ORG\]" ~/.grafana/"$environment"))
+            source <(grep '=' <(grep -A3 "\[ENVIRONMENT\]" ~/.grafana/"$environment"))
             printConfig        
             ;;
         *)
@@ -61,15 +61,16 @@ setEnv () {
 }
 
 getStatusCode () {
-    local statusCode=$(curl --write-out %{http_code} --output /dev/null -ksH "$GF_AUTH_HEADER" $GF_API_URL/org)
-    echo $statusCode
+    local statusCode
+    statusCode=$(curl --write-out '%{http_code}' --output /dev/null -ksH "$GF_AUTH_HEADER" "$GF_API_URL"/org)
+    echo "$statusCode"
 }
 
 getAlerts () {
     statusCode=$(getStatusCode)
 
-    if [ $statusCode -eq 200 ]; then
-        curl -ksH "$GF_AUTH_HEADER" $GF_API_URL/alerts/ | \
+    if [ "$statusCode" -eq 200 ]; then
+        curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL"/alerts/ | \
         jq -r '.[] | select(.state | test("no_data|paused|alerting|pending|ok|unknown")) | [.id,.state,.dashboardSlug,.name] | @csv ' | \
         awk -v FS="," \
         -v red="$(tput setaf 1)" \
@@ -93,42 +94,66 @@ getAlerts () {
 }
 
 # $1=alertID
-pauseAlert () {
+checkExcluded () {
     alert=$1
 
-    curl -X POST -ksH "$GF_AUTH_HEADER" \
-    -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    -d '{"paused":true}' \
-    "$GF_API_URL/alerts/$alert/pause" 2>&1 && printf "\n"; 
+    for excluded in $(echo ${GF_EXCLUDE_ALERTS[*]} | sed "s/,/ /g")
+    do
+        if [[ "$excluded" -eq "$alert" ]]; then
+            return 1
+        fi
+    done
+}
+
+# $1=alertID
+pauseAlert () {
+    alert=$1
+    checkExcluded $alert
+    isExcluded=$?
+
+    if [[ 0 -eq $isExcluded ]]; then
+        curl -X POST -ksH "$GF_AUTH_HEADER" \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        -d '{"paused":true}' \
+        "$GF_API_URL/alerts/$alert/pause" 2>&1 && printf "\n"; 
+    else
+        printf "Excluding alert with ID: %d\n" $alert;
+    fi
 }
 
 # $1=alertID
 resumeAlert () {
     alert=$1
+    checkExcluded $alert
+    isExcluded=$?
 
-    curl -X POST -ksH "$GF_AUTH_HEADER" \
-    -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    -d '{"paused":false}' \
-    "$GF_API_URL/alerts/$alert/pause" 2>&1 && printf "\n"; 
+    if [[ 0 -eq $isExcluded ]]; then
+        curl -X POST -ksH "$GF_AUTH_HEADER" \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        -d '{"paused":false}' \
+        "$GF_API_URL/alerts/$alert/pause" 2>&1 && printf "\n"; 
+    else
+        printf "Excluding alert with ID: %d\n" $alert;
+    fi
 }
 
 # $1=alertIDs separated by comma
 pauseAlerts () {
-    if [ -z $1 ]; then
-        curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read line; do pauseAlert $line; done 2>&1; printf "\n"
+    if [ -z "$1" ]; then
+        curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read -r line; do pauseAlert "$line"; done 2>&1; printf "\n"
     else
-        echo "$1" | sed -e $'s/,/\\\n/g' | while read line; do pauseAlert $line;done 2>&1; printf "\n"
+        echo "$1" | sed -e $'s/,/\\\n/g' | while read -r line; do pauseAlert "$line";done 2>&1; printf "\n"
     fi
 }
 
 # $1=alertIDs separated by comma
 resumeAlerts () {
-    if [ -z $1 ]; then
-        curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read line; do resumeAlert $line;  done 2>&1; printf "\n"
+    if [ -z "$1" ]; then
+        curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read -r line; do resumeAlert "$line";  done 2>&1; printf "\n"
     else
-        echo "$1" | sed -e $'s/,/\\\n/g' | while read line; do resumeAlert $line; done 2>&1; printf "\n"
+        echo "$1" | sed -e $'s/,/\\\n/g' | while read -r line; do resumeAlert "$line"; done 2>&1; printf "\n"
     fi
 }
 
@@ -158,13 +183,13 @@ if [ -z "$1" ]; then
 elif [ "$1" = "config" ]; then
     shift
     command=$1
-    if [ -z $command ]; then
+    if [ -z "$command" ]; then
         printConfig
     else
         case "$command" in
             set-env)
                 shift
-                if [ -z $1 ]; then
+                if [ -z "$1" ]; then
                     echo "Environment parameter was not provided but it was expected"
                     usage
                 else                
@@ -176,7 +201,7 @@ elif [ "$1" = "config" ]; then
                     else
                         org=$1
                         echo "Switching environment: $env selected ..."
-                        setEnv $env $org
+                        setEnv "$env" "$org"
                     fi                    
                 fi
                 ;;
@@ -196,7 +221,7 @@ else
     case "$resource" in
         alerts)
             action=$1; shift
-            if [ -z $action ]; then
+            if [ -z "$action" ]; then
                 getAlerts
                 exit 0
             fi
@@ -204,7 +229,7 @@ else
             case "$action" in
                 pause)
                     alertIds=$1; shift
-                    if [ -z $alertIds ]; then
+                    if [ -z "$alertIds" ]; then
                         pauseAlerts
                         exit 0
                     fi
@@ -214,12 +239,12 @@ else
                         exit 1
                     fi
 
-                    pauseAlerts $alertIds
+                    pauseAlerts "$alertIds"
 
                     ;;
                 resume)
                     alertIds=$1
-                    if [ -z $1 ]; then
+                    if [ -z "$1" ]; then
                         resumeAlerts
                         exit 0
                     fi
@@ -229,7 +254,7 @@ else
                         exit 1
                     fi
 
-                    resumeAlerts $alertIds
+                    resumeAlerts "$alertIds"
 
                     ;;
                 * )
