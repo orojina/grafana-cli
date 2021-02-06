@@ -1,4 +1,11 @@
 CHANGELOG
+## [1.7.0](https://github.com/orojina/grafana-cli/compare/v1.6.0...v1.7.0) (2021-02-06)
+
+
+### Features
+
+* allow to define a list of alerts to be excluded(ignored) by the commands ([3314350](https://github.com/orojina/grafana-cli/commit/33143509600b61dfe5eebecceb0986dcbe7799e4))
+
 ## [1.6.0](https://github.com/orojina/grafana-cli/compare/v1.5.0...v1.6.0) (2021-02-06)
 
 
