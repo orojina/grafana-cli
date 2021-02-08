@@ -100,7 +100,7 @@ Use the following command to see a list of available commands and how to use the
 ```sh
     ~/grafana-cli.sh alerts
 ```
-![grafana-cli](docs/images/Display_alerts.PNG)
+![grafana-cli](docs/images/Display_alerts.png)
 
 <br>
 
