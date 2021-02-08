@@ -1,4 +1,11 @@
 CHANGELOG
+### [1.8.1](https://github.com/orojina/grafana-cli/compare/v1.8.0...v1.8.1) (2021-02-08)
+
+
+### Documentation
+
+* fix broken img reference ([f3f8c29](https://github.com/orojina/grafana-cli/commit/f3f8c29147ae830788dfb6cef0e339e5048ba149))
+
 ## [1.8.0](https://github.com/orojina/grafana-cli/compare/v1.7.0...v1.8.0) (2021-02-08)
 
 
