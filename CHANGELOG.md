@@ -1,4 +1,11 @@
 CHANGELOG
+## [1.8.0](https://github.com/orojina/grafana-cli/compare/v1.7.0...v1.8.0) (2021-02-08)
+
+
+### Documentation
+
+* update readme file with instructions on how to use the script ([b155b19](https://github.com/orojina/grafana-cli/commit/b155b1973b88d951da1fd0b15a7e421dadd6c480))
+
 ## [1.7.0](https://github.com/orojina/grafana-cli/compare/v1.6.0...v1.7.0) (2021-02-06)
 
 
