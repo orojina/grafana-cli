@@ -1,4 +1,11 @@
 CHANGELOG
+### [1.8.2](https://github.com/orojina/grafana-cli/compare/v1.8.1...v1.8.2) (2021-02-09)
+
+
+### Documentation
+
+* change wrong command in the readme file ([ee9ed48](https://github.com/orojina/grafana-cli/commit/ee9ed480153194c2d2432b221af9356666a90f4c))
+
 ### [1.8.1](https://github.com/orojina/grafana-cli/compare/v1.8.0...v1.8.1) (2021-02-08)
 
 
