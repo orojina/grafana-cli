@@ -58,7 +58,7 @@ This section contains:
 These sections are intended to store the Grafana tokens for each Grafana Organization. In this example we are declaring 2 Grafana Organizations `ORGANIZATION_A` & `ORGANIZATION_B` but you can have more organizations and name them as you wish. The name you use as the section name is the name of the organization you will be using to load the environment variables using the following command in your terminal: 
 
 ```sh
-    source ~/grafana-cli.sh config switch-env dev ORGANIZATION_A
+    source ~/grafana-cli.sh config set-env dev ORGANIZATION_A
 ```
 
 <br>
