@@ -8,7 +8,7 @@
 
 <br>
 
-![grafana-cli](docs/images/Display_alerts.png)
+![grafana-cli](docs/images/orojina-grafana-cli.gif)
 
 <br><br>
 
