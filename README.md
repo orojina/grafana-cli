@@ -125,10 +125,13 @@ Use the following command to see a list of available commands and how to use the
 
 - **Pause specific alerts by alertId**
 <br>
+
 Use the `-i` option followed by the alert IDs you want `grafana-cli` to `pause`
+
 ```sh
     ~/grafana-cli.sh alerts pause -i 2,8,9
 ```
+
 ![grafana-cli](docs/images/Pause_specific.png)
 
 <br><br>
@@ -136,9 +139,11 @@ Use the `-i` option followed by the alert IDs you want `grafana-cli` to `pause`
 - **Add annotations**
 <br>
 Use the `-a` option followed by any text to add an annotation as part of the `pause/resume` action
+
 ```sh
     ~/grafana-cli.sh alerts pause -i 2,8,9 -a "Pausing alerts due maintenance activities"
 ```
+
 ![grafana-cli](docs/images/Pause_w_annotation.png)
 ![grafana-cli](docs/images/Annotation.png)
 
