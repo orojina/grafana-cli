@@ -20,9 +20,13 @@ usage () {
                 |  source $0 config set-env qa <organization>   | Set the current environment to qa (env: dev|qa|prod)   |
                 |  $0 alerts                                    | Prints the list of alerts in the current environment   |
                 |  $0 alerts pause                              | Pauses all the alerts in the current environment       |
-                |  $0 alerts pause 13,96,55                     | Pauses alerts by their ID in the current environment   |
+                |  $0 alerts pause -i 13,96,55                  | Pauses alerts by their ID in the current environment   |
+                |  $0 alerts pause -a 'Pause alerts'            | Pauses all the alerts and adds an annotation           |
+                |  $0 alerts pause -a 'Pause alerts' -i 13,96   | Pauses alerts by their ID and adds an annotation       |
                 |  $0 alerts resume                             | Resume all the alerts in the current environment       |
-                |  $0 alerts resume 13,96,55                    | Resume alerts by their ID in the current environment   |
+                |  $0 alerts resume -i 13,96,55                 | Resume alerts by their ID in the current environment   |
+                |  $0 alerts resume -a 'Pause alerts'           | Resume all the alerts and adds an annotation           |
+                |  $0 alerts resume -a 'Pause alerts' -i 13,96  | Resume alerts by their ID and adds an annotation       |
                 |----------------------------------------------------------------------------------------------------------------------|
 
                 NOTE: This script requires jq to be installed (https://stedolan.github.io/jq/download/)
@@ -139,20 +143,46 @@ resumeAlert () {
     fi
 }
 
-# $1=alertIDs separated by comma
+addAnnotation () {
+    DATA="{\"what\": "\"$1\"", \"tags\": [\"grafana-cli\",\""$2"\"]}"
+
+    curl -X POST -ksH "$GF_AUTH_HEADER" \
+    -H "Accept: application/json" \
+    -H "Content-Type: application/json" \
+    -d "$DATA" \
+    "$GF_API_URL/annotations/graphite" 2>&1 && printf "\n";  
+}
+
+# $1=alertIDs separated by comma, $2=Annotation text
 pauseAlerts () {
+    if [ ! -z "$2" ]; then
+        addAnnotation "$2" "alerting-pause"
+    fi
+
     if [ -z "$1" ]; then
         curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read -r line; do pauseAlert "$line"; done 2>&1; printf "\n"
     else
+        if [[ ! $1 =~ (^[0-9]+)((\,[0-9]+)+$|$) ]]; then
+            echo "Invalid argument: Alert IDs. Expected ids in comma separated format "
+            exit 1
+        fi
         echo "$1" | sed -e $'s/,/\\\n/g' | while read -r line; do pauseAlert "$line";done 2>&1; printf "\n"
     fi
 }
 
-# $1=alertIDs separated by comma
+# $1=alertIDs separated by comma, $2=Annotation text
 resumeAlerts () {
+    if [ ! -z "$2" ]; then
+        addAnnotation "$2" "alerting-resume"
+    fi
+
     if [ -z "$1" ]; then
         curl -ksH "$GF_AUTH_HEADER" "$GF_API_URL/alerts/" | jq -r '.[] | [.id] | @csv ' | while read -r line; do resumeAlert "$line";  done 2>&1; printf "\n"
     else
+        if [[ ! $1 =~ (^[0-9]+)((\,[0-9]+)+$|$) ]]; then
+            echo "Invalid argument: Alert IDs. Expected ids in comma separated format "
+            exit 1
+        fi
         echo "$1" | sed -e $'s/,/\\\n/g' | while read -r line; do resumeAlert "$line"; done 2>&1; printf "\n"
     fi
 }
@@ -228,33 +258,50 @@ else
 
             case "$action" in
                 pause)
-                    alertIds=$1; shift
-                    if [ -z "$alertIds" ]; then
-                        pauseAlerts
-                        exit 0
-                    fi
-                    
-                    if [[ ! $alertIds =~ (^[0-9]+)((\,[0-9]+)+$|$) ]]; then
-                        echo "Invalid argument: Alert IDs. Expected ids in comma separated format "
-                        exit 1
-                    fi
+                    while getopts ":a:i:" opt; do
+                        case ${opt} in
+                            a )
+                                annotation=$OPTARG
+                                ;;
+                            i )
+                                alertIds=$OPTARG
+                                ;;
+                            \? )
+                                echo "Invalid option: -$OPTARG" 1>&2
+                                exit 1
+                                ;;
+                            : )
+                                echo "Invalid Option: -$OPTARG requires an argument" 1>&2
+                                exit 1
+                                ;;
+                        esac
+                    done
+                    shift $((OPTIND-1))
 
-                    pauseAlerts "$alertIds"
-
+                    pauseAlerts "$alertIds" "$annotation"
                     ;;
                 resume)
-                    alertIds=$1
-                    if [ -z "$1" ]; then
-                        resumeAlerts
-                        exit 0
-                    fi
+                    while getopts ":a:i:" opt; do
+                        case ${opt} in
+                            a )
+                                annotation=$OPTARG
+                                ;;
+                            i )
+                                alertIds=$OPTARG
+                                ;;
+                            \? )
+                                echo "Invalid option: -$OPTARG" 1>&2
+                                exit 1
+                                ;;
+                            : )
+                                echo "Invalid Option: -$OPTARG requires an argument" 1>&2
+                                exit 1
+                                ;;
+                        esac
+                    done
+                    shift $((OPTIND-1))
 
-                    if [[ ! $alertIds =~ (^[0-9]+)((\,[0-9]+)+$|$) ]]; then
-                        echo "Invalid argument: Alert IDs. Expected ids in comma separated format "
-                        exit 1
-                    fi
-
-                    resumeAlerts "$alertIds"
+                    resumeAlerts "$alertIds" "$annotation"
 
                     ;;
                 * )
