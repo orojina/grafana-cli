@@ -1,4 +1,11 @@
 CHANGELOG
+## [2.0.0](https://github.com/orojina/grafana-cli/compare/v1.8.2...v2.0.0) (2021-02-20)
+
+
+### Features
+
+* allow users to add annotations when pausing ot resuming their alerts ([572449d](https://github.com/orojina/grafana-cli/commit/572449d5b3a8001b847204768652895e70e46f16))
+
 ### [1.8.2](https://github.com/orojina/grafana-cli/compare/v1.8.1...v1.8.2) (2021-02-09)
 
 
